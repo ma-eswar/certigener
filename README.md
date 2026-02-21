@@ -30,7 +30,7 @@
 
 1. **Clone the repository** (or download source code):
    ```bash
-   git clone https://github.com/your-username/CertiGener-Basic.git
+   git clone https://github.com/ma-eswar/certigener
    cd CertiGener-Basic
    ```
 
