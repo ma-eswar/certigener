@@ -1,7 +1,7 @@
 
-# 🎓 CertGen Basic
+# 🎓 CertiGener Basic
 
-**CertGen Basic** is a lightweight, local web application designed to generate bulk certificates from a template image and an Excel file. It is built for schools, event organizers, and HR departments to automate certificate creation without complex software.
+**CertiGener Basic** is a lightweight, local web application designed to generate bulk certificates from a template image and an Excel file. It is built for schools, event organizers, and HR departments to automate certificate creation without complex software.
 
 ## 🚀 Features
 
@@ -30,8 +30,8 @@
 
 1. **Clone the repository** (or download source code):
    ```bash
-   git clone https://github.com/your-username/CertGen-Basic.git
-   cd CertGen-Basic
+   git clone https://github.com/your-username/CertiGener-Basic.git
+   cd CertiGener-Basic
    ```
 
 2. **Create a Virtual Environment** (Optional but Recommended):
@@ -73,7 +73,7 @@
 ## 📂 Project Structure
 
 ```
-CertGen-Basic/
+CertiGener-Basic/
 │
 ├── app.py                 # Main Flask Application
 ├── requirements.txt       # Python Dependencies
