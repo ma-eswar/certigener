@@ -1,44 +1,4 @@
-Here are the final files you need to wrap up the project.
 
-### 1. `requirements.txt`
-Save this file in your root folder. It lists all the Python libraries required to run the application.
-
-```text
-Flask==3.0.0
-pandas==2.1.4
-openpyxl==3.1.2
-Pillow==10.2.0
-```
-
----
-
-### 2. `.gitignore`
-**Crucial:** Create a file named `.gitignore` (no extension) to prevent uploading your temporary files, virtual environment, and generated certificates to GitHub.
-
-```text
-# Python cache
-__pycache__/
-*.pyc
-
-# Virtual Environment
-venv/
-env/
-
-# Application Data (Do not commit user uploads)
-uploads/
-outputs/
-
-# VS Code / Editor settings
-.vscode/
-.idea/
-```
-
----
-
-### 3. `README.md`
-This is the documentation file that will appear on your GitHub repository's front page.
-
-```markdown
 # 🎓 CertGen Basic
 
 **CertGen Basic** is a lightweight, local web application designed to generate bulk certificates from a template image and an Excel file. It is built for schools, event organizers, and HR departments to automate certificate creation without complex software.
