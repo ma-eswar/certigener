@@ -87,9 +87,5 @@ CertiGener-Basic/
 └── outputs/               # (Auto-created) Stores generated ZIPs
 ```
 
-## 🔮 Future Improvements
 
-- Add alignment tools (Left/Right/Center justify).
-- Add support for date formatting options.
-- Email integration to send certificates directly.
 
