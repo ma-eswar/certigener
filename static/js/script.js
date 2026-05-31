@@ -3,7 +3,6 @@ const ctx = canvas.getContext('2d');
 const generateBtn = document.getElementById('generateBtn');
 const inspector = document.getElementById('propertiesPanel');
 
-// Generate unique ID for this user's session
 const SESSION_ID = 'session_' + Math.random().toString(36).substr(2, 9);
 
 let bgImage = new Image();
@@ -33,7 +32,7 @@ document.getElementById('templateInput').addEventListener('change', (e) => {
             
             const formData = new FormData();
             formData.append('file', file);
-            formData.append('session_id', SESSION_ID); // Attach session ID
+            formData.append('session_id', SESSION_ID);
             fetch('/upload-template', { method: 'POST', body: formData });
             checkReady();
         }
@@ -83,13 +82,16 @@ function addTextField() {
         alert("Please import a template from the left dock first.");
         return;
     }
+    
+    const defaultFontSize = Math.max(40, Math.floor(canvas.height * 0.05));
+    
     const newField = {
         id: Date.now(),
         x: canvas.width / 2, 
         y: canvas.height / 2,
         name: `New Text`,
         mapping: '',
-        fontSize: 60,
+        fontSize: defaultFontSize,
         fontColor: '#000000',
         fontFile: availableFonts[0].file 
     };
@@ -159,9 +161,10 @@ canvas.addEventListener('mousedown', (e) => {
     if (!bgImage.src) return;
     const pos = getCanvasCoords(e);
     let foundId = null;
+    
     for (let i = placeholders.length - 1; i >= 0; i--) {
         const p = placeholders[i];
-        if (pos.x >= p.x - 200 && pos.x <= p.x + 200 && pos.y >= p.y - p.fontSize && pos.y <= p.y + p.fontSize) {
+        if (pos.x >= p.x - (p.fontSize*3) && pos.x <= p.x + (p.fontSize*3) && pos.y >= p.y - p.fontSize && pos.y <= p.y + p.fontSize) {
             foundId = p.id;
             isDragging = true;
             dragOffsetX = pos.x - p.x;
@@ -213,7 +216,7 @@ function drawCanvas() {
             ctx.lineWidth = 2 * scaleFactor;
             ctx.strokeRect(p.x - w/2, p.y - h/2, w, h);
             
-            const hSize = 5 * scaleFactor;
+            const hSize = 6 * scaleFactor;
             const handles = [
                 [p.x - w/2, p.y - h/2], [p.x + w/2, p.y - h/2],
                 [p.x - w/2, p.y + h/2], [p.x + w/2, p.y + h/2]
@@ -234,26 +237,26 @@ function checkReady() {
 }
 
 function generateBatch() {
-    const originalText = generateBtn.innerHTML;
-    generateBtn.innerHTML = "Rendering...";
+    const originalContent = generateBtn.innerHTML;
+    generateBtn.innerHTML = "<div style='font-size:12px;'>Rendering...</div>";
     generateBtn.disabled = true;
 
     fetch('/generate', {
         method: 'POST',
         headers: {'Content-Type': 'application/json'},
-        body: JSON.stringify({ placeholders: placeholders, session_id: SESSION_ID }) // Send Session ID
+        body: JSON.stringify({ placeholders: placeholders, session_id: SESSION_ID })
     })
     .then(res => res.json())
     .then(data => {
         if(data.error) alert(data.error);
         else showModal(data.zip_url);
         
-        generateBtn.innerHTML = originalText;
+        generateBtn.innerHTML = originalContent;
         generateBtn.disabled = false;
     })
     .catch(err => {
         alert("Server timeout. Try again.");
-        generateBtn.innerHTML = originalText;
+        generateBtn.innerHTML = originalContent;
         generateBtn.disabled = false;
     });
 }
@@ -261,7 +264,10 @@ function generateBatch() {
 function showModal(zipUrl) {
     const modal = document.getElementById('exportModal');
     const zipBtn = document.getElementById('downloadZipBtn');
-    zipBtn.onclick = () => window.location.href = zipUrl;
+    zipBtn.onclick = () => {
+        window.location.href = zipUrl;
+        closeModal();
+    };
     modal.style.display = 'flex';
 }
 

@@ -2,7 +2,6 @@ import os
 import zipfile
 import io
 import time
-import glob
 import pandas as pd
 from flask import Flask, render_template, request, send_file, jsonify, send_from_directory
 from PIL import Image, ImageDraw, ImageFont
@@ -13,20 +12,21 @@ BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 UPLOAD_FOLDER = os.path.join(BASE_DIR, 'uploads')
 OUTPUT_FOLDER = os.path.join(BASE_DIR, 'outputs')
 
-os.makedirs(UPLOAD_FOLDER, exist_ok=True)
+os.makedirs(os.path.join(UPLOAD_FOLDER, 'fonts'), exist_ok=True)
+os.makedirs(os.path.join(UPLOAD_FOLDER, 'templates'), exist_ok=True)
 os.makedirs(OUTPUT_FOLDER, exist_ok=True)
 
 def cleanup_old_files():
-    """Deletes files older than 1 hour to keep Render server memory/disk clean"""
-    current_time = time.time()
-    for folder in [UPLOAD_FOLDER, OUTPUT_FOLDER]:
-        for file_path in glob.glob(os.path.join(folder, '*')):
-            if os.path.isfile(file_path):
-                if current_time - os.path.getctime(file_path) > 3600: # 1 hour
-                    try:
+    try:
+        current_time = time.time()
+        for folder in [UPLOAD_FOLDER, OUTPUT_FOLDER]:
+            for f in os.listdir(folder):
+                file_path = os.path.join(folder, f)
+                if os.path.isfile(file_path) and f != 'test_data.csv':
+                    if current_time - os.path.getctime(file_path) > 3600:
                         os.remove(file_path)
-                    except:
-                        pass
+    except:
+        pass
 
 @app.route('/')
 def index():
@@ -36,8 +36,12 @@ def index():
 def download_samples():
     memory_file = io.BytesIO()
     with zipfile.ZipFile(memory_file, 'w') as zf:
-        fallback_data = "Name,Course,Date\nAditya Varma,UI/UX Design,12-Aug-2026\nJane Doe,Data Science,14-Aug-2026"
-        zf.writestr('test_data.csv', fallback_data)
+        csv_path = os.path.join(UPLOAD_FOLDER, 'test_data.csv')
+        if os.path.exists(csv_path):
+            zf.write(csv_path, 'test_data.csv')
+        else:
+            fallback_data = "Name,Course,Date\nAditya Varma,UI/UX Design,12-Aug-2026\nJane Doe,Data Science,14-Aug-2026"
+            zf.writestr('test_data.csv', fallback_data)
             
         img = Image.new('RGB', (1000, 700), color=(250, 250, 252))
         draw = ImageDraw.Draw(img)
@@ -52,7 +56,7 @@ def download_samples():
 
 @app.route('/upload-template', methods=['POST'])
 def upload_template():
-    cleanup_old_files() # Clean server on new activity
+    cleanup_old_files()
     file = request.files['file']
     session_id = request.form['session_id']
     path = os.path.join(UPLOAD_FOLDER, f'{session_id}_template.png')
@@ -70,6 +74,7 @@ def upload_font():
 
 @app.route('/parse-excel', methods=['POST'])
 def parse_excel():
+    cleanup_old_files()
     file = request.files['file']
     session_id = request.form['session_id']
     
@@ -83,6 +88,7 @@ def parse_excel():
 
 @app.route('/generate', methods=['POST'])
 def generate():
+    cleanup_old_files()
     data = request.json
     placeholders = data.get('placeholders', [])
     session_id = data.get('session_id')
@@ -96,13 +102,15 @@ def generate():
     df = pd.read_csv(data_path)
     generated_files = []
     
-    # Load base image into memory once
     base_image = Image.open(template_path).convert("RGB")
     
     loaded_fonts = {}
     for p in placeholders:
         font_file = p.get('fontFile', 'arial.ttf')
         font_path = os.path.join(UPLOAD_FOLDER, f'{session_id}_{font_file}')
+        if not os.path.exists(font_path):
+            font_path = os.path.join(UPLOAD_FOLDER, 'fonts', font_file)
+            
         size = int(p['fontSize'])
         font_key = f"{font_file}_{size}"
         if font_key not in loaded_fonts:
@@ -117,6 +125,9 @@ def generate():
         
         for p in placeholders:
             text = str(row.get(p['mapping'], p['name']))
+            if pd.isna(text) or text == "nan":
+                text = ""
+                
             font_key = f"{p.get('fontFile', 'arial.ttf')}_{int(p['fontSize'])}"
             font = loaded_fonts[font_key]
             
@@ -127,7 +138,6 @@ def generate():
         
         filename = f"{session_id}_cert_{index+1}.jpg"
         out_path = os.path.join(OUTPUT_FOLDER, filename)
-        # Highly optimized saving
         img.save(out_path, format="JPEG", quality=85, optimize=True)
         generated_files.append(filename)
 
@@ -139,10 +149,9 @@ def generate():
     with zipfile.ZipFile(zip_path, 'w') as zipf:
         for file in generated_files:
             file_path = os.path.join(OUTPUT_FOLDER, file)
-            # Remove session_id prefix in the final ZIP for the user
             clean_name = file.replace(f"{session_id}_", "")
             zipf.write(file_path, clean_name)
-            os.remove(file_path) # Clean up individual images instantly to save memory
+            os.remove(file_path)
             
     return jsonify({
         "zip_url": f"/download/{zip_filename}"
