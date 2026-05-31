@@ -5,6 +5,7 @@ from flask import Flask, render_template, request, send_file, jsonify
 from PIL import Image, ImageDraw, ImageFont
 
 app = Flask(__name__)
+app.config['MAX_CONTENT_LENGTH'] = 25 * 1024 * 1024
 UPLOAD_FOLDER = 'uploads'
 OUTPUT_FOLDER = 'outputs'
 os.makedirs(f"{UPLOAD_FOLDER}/fonts", exist_ok=True)
@@ -114,4 +115,4 @@ def download_zip():
     return send_file(os.path.join(OUTPUT_FOLDER, 'certificates.zip'), as_attachment=True)
 
 if __name__ == '__main__':
-    app.run(debug=True, port=5000)
+    app.run(host='0.0.0.0', port=int(os.environ.get("PORT", 5000)))
