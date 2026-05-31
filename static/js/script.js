@@ -3,6 +3,9 @@ const ctx = canvas.getContext('2d');
 const generateBtn = document.getElementById('generateBtn');
 const inspector = document.getElementById('propertiesPanel');
 
+// Generate unique ID for this user's session
+const SESSION_ID = 'session_' + Math.random().toString(36).substr(2, 9);
+
 let bgImage = new Image();
 let placeholders = []; 
 let selectedId = null;
@@ -30,6 +33,7 @@ document.getElementById('templateInput').addEventListener('change', (e) => {
             
             const formData = new FormData();
             formData.append('file', file);
+            formData.append('session_id', SESSION_ID); // Attach session ID
             fetch('/upload-template', { method: 'POST', body: formData });
             checkReady();
         }
@@ -42,6 +46,7 @@ document.getElementById('excelInput').addEventListener('change', (e) => {
     if(!file) return;
     const formData = new FormData();
     formData.append('file', file);
+    formData.append('session_id', SESSION_ID);
     
     fetch('/parse-excel', { method: 'POST', body: formData })
     .then(res => res.json())
@@ -69,6 +74,7 @@ document.getElementById('fontInput').addEventListener('change', async (e) => {
 
     const formData = new FormData();
     formData.append('file', file);
+    formData.append('session_id', SESSION_ID);
     fetch('/upload-font', { method: 'POST', body: formData });
 });
 
@@ -94,7 +100,6 @@ function addTextField() {
 
 function selectField(id) {
     selectedId = id;
-    
     if(selectedId) {
         inspector.classList.add('visible');
         const p = placeholders.find(item => item.id === id);
@@ -154,7 +159,6 @@ canvas.addEventListener('mousedown', (e) => {
     if (!bgImage.src) return;
     const pos = getCanvasCoords(e);
     let foundId = null;
-    
     for (let i = placeholders.length - 1; i >= 0; i--) {
         const p = placeholders[i];
         if (pos.x >= p.x - 200 && pos.x <= p.x + 200 && pos.y >= p.y - p.fontSize && pos.y <= p.y + p.fontSize) {
@@ -237,12 +241,12 @@ function generateBatch() {
     fetch('/generate', {
         method: 'POST',
         headers: {'Content-Type': 'application/json'},
-        body: JSON.stringify({ placeholders: placeholders })
+        body: JSON.stringify({ placeholders: placeholders, session_id: SESSION_ID }) // Send Session ID
     })
     .then(res => res.json())
     .then(data => {
         if(data.error) alert(data.error);
-        else showModal(data.zip_url, data.files);
+        else showModal(data.zip_url);
         
         generateBtn.innerHTML = originalText;
         generateBtn.disabled = false;
@@ -254,22 +258,10 @@ function generateBatch() {
     });
 }
 
-function showModal(zipUrl, filesArray) {
+function showModal(zipUrl) {
     const modal = document.getElementById('exportModal');
     const zipBtn = document.getElementById('downloadZipBtn');
-    const fileList = document.getElementById('fileList');
-    
     zipBtn.onclick = () => window.location.href = zipUrl;
-    
-    fileList.innerHTML = '';
-    filesArray.forEach(file => {
-        const a = document.createElement('a');
-        a.href = `/download/${file}`;
-        a.innerHTML = `📄 ${file}`;
-        a.target = '_blank';
-        fileList.appendChild(a);
-    });
-    
     modal.style.display = 'flex';
 }
 
